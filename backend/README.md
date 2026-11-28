@@ -16,18 +16,22 @@
 
 ---
 
-## Step 4. 실행 & 외부 공개 런북
+## 실행 방법
 
-> 권장 Python: **3.11 또는 3.12** (Dockerfile 과 동일하게 3.11 추천)
+**가장 쉬운 방법:** 저장소 루트의 `scripts\start-dev.bat` 더블클릭 (개인 개발 서버: 백엔드 8001 + 프론트 3001).
+공용 서버 운영은 [docs/server-guide.md](../docs/server-guide.md) 를 보세요.
+
+아래는 스크립트 없이 직접 실행하는 방법입니다.
+
+> 권장 Python: **3.11 ~ 3.14** (Dockerfile 은 3.11)
 
 ### 1) 최초 1회 설치
 
-**Windows (PowerShell)**
-```powershell
+**Windows (cmd)**
+```cmd
 cd backend
-py -3.11 -m venv .venv
-# 스크립트 실행이 막혀 있으면 한 번만 실행: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-.\.venv\Scripts\Activate.ps1
+py -3 -m venv .venv
+.venv\Scripts\activate.bat
 pip install -r requirements.txt
 copy .env.example .env
 ```
@@ -35,7 +39,7 @@ copy .env.example .env
 **macOS (터미널)**
 ```bash
 cd backend
-python3.11 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
@@ -60,6 +64,9 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 - 시작 로그에 `🔒 접근 키 사용 중` 이 보이면 키가 적용된 것입니다.
 
 ### 4) Tailscale Funnel 로 고정 공개 주소 열기 (터미널 ②)
+
+> 공용 서버는 `start-server.bat` 가 프론트(3000)를 Funnel 에 연결하고, 프론트가 `/api` 를 백엔드로 전달합니다.
+> 아래는 **백엔드만** 직접 공개할 때의 방법입니다.
 
 최초 1회: `winget install --id Tailscale.Tailscale` 설치 → 트레이 아이콘으로 로그인 → 관리 페이지 DNS 에서 MagicDNS·HTTPS 켜기.
 
@@ -136,7 +143,10 @@ API 계약(JSON 형식·등급 구간·EXIF 중립), 접근 키, 파일 형식 �
 
 ---
 
-## Step 5. Hugging Face Spaces 배포 (Week 3~4)
+## Step 5. Hugging Face Spaces 배포 (Week 3~4) — ⚠️ 재검토 필요
+
+> 2026년 현재 HF Spaces 는 Docker Space 실행에 유료 플랜이 필요하고, 무료 디스크는 재시작 시 초기화됩니다.
+> 학습 데이터를 쌓는 공용 서버는 태연 PC 에서 운영하고, 이 섹션은 회의 후 결정합니다.
 
 1. https://huggingface.co/new-space → **SDK: Docker** → Blank → Hardware: CPU basic(무료)
 2. Space 저장소 루트에 이 `backend/` 내용물을 그대로 올리고, Space 의 `README.md` 맨 위에 아래 헤더를 둡니다:

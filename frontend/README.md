@@ -4,16 +4,19 @@ AI 이미지 진위 판별 서비스의 웹 화면입니다. 디자인은 [desig
 
 ## 실행 방법
 
-> Node.js 22 이상 권장 (최소 20.9) (`node -v` 로 확인)
+**가장 쉬운 방법:** 저장소 루트의 `scripts\start-dev.bat` 더블클릭 → 백엔드·프론트가 같이 켜지고 http://localhost:3001 이 열립니다.
 
+직접 실행하려면 (Node.js 22 권장, 최소 20.9):
 ```cmd
-cd C:\Dev\p-project\frontend
+cd frontend
 npm install
 npm run dev
 ```
+→ http://localhost:3000. 이 경우 **백엔드가 127.0.0.1:8000 에 켜져 있어야** 분석이 됩니다.
 
-브라우저에서 http://localhost:3000 접속. **백엔드 서버(localhost:8000)가 켜져 있어야** 분석이 됩니다.
-사이드바 아래 '서버 연결됨' 초록불로 연결 상태를 확인할 수 있습니다.
+### 백엔드와 연결되는 방식 (프록시)
+브라우저는 항상 **같은 주소**(`/api/...`)로 요청하고, Next 서버가 `next.config.ts` 의 프록시로 백엔드에 전달합니다.
+그래서 주소가 하나로 통일되고 CORS 설정이 필요 없습니다. 사이드바에는 `같은 주소 (프록시)` 로 표시됩니다.
 
 ## 접근 키
 
@@ -24,14 +27,13 @@ npm run dev
 
 ## 백엔드 주소 바꾸기
 
-기본값은 `http://localhost:8000` 이라 로컬에서는 설정 없이 동작합니다.
-주소를 바꾸려면 `frontend` 폴더에 `.env.local` 파일을 만들고 아래 한 줄을 넣은 뒤 `npm run dev` 를 다시 실행하세요.
-
+기본은 같은 PC 의 백엔드(`http://127.0.0.1:8000`)입니다. 다른 백엔드에 붙이려면 `frontend\.env.local` 에 한 줄 넣고 다시 실행하세요.
 ```
-NEXT_PUBLIC_API_BASE=http://localhost:8000              # 로컬
-NEXT_PUBLIC_API_BASE=https://pc이름.tailXXXX.ts.net     # Tailscale Funnel 고정 주소
-NEXT_PUBLIC_API_BASE=https://아이디-스페이스.hf.space     # HF Spaces 배포 후
+BACKEND_URL=https://xodus217.taile57f46.ts.net    # 공용 서버에 붙이기 (프론트만 개발할 때)
 ```
+- `start-dev.bat -UsePublicServer` 를 쓰면 이 설정 없이 자동으로 공용 서버에 붙습니다.
+- `npm run build` 할 때의 값이 빌드 결과에 고정되므로, 바꾼 뒤에는 다시 빌드하세요.
+- 업로드는 프록시를 거쳐도 최대 20MB 까지 됩니다 (`next.config.ts` 의 `proxyClientMaxBodySize`).
 
 ## 파일 구조 (어디를 고치면 되는지)
 
@@ -39,7 +41,8 @@ NEXT_PUBLIC_API_BASE=https://아이디-스페이스.hf.space     # HF Spaces 배
 |---|---|
 | `src/app/globals.css` | 색·모양 디자인 토큰. **전체 색을 바꾸려면 여기만** |
 | `src/app/layout.tsx` | 폰트(Pretendard, Geist Mono), 페이지 제목 |
-| `src/components/Home.tsx` | 메인 화면. 분석 흐름과 결과 카드 배치 |
+| `next.config.ts` | 백엔드 프록시 주소·업로드 한도 |
+| `src/components/Home.tsx` | 메인 화면. 분석 흐름, 결과 카드 배치, 학습 데이터 동의 체크박스 |
 | `src/components/Sidebar.tsx` | 왼쪽 메뉴, 등급 범례, 서버 상태 |
 | `src/components/UploadStage.tsx` | 이미지 드래그&드롭 업로드 |
 | `src/components/UrlBar.tsx` | 하단 URL 입력창 |
@@ -54,9 +57,7 @@ NEXT_PUBLIC_API_BASE=https://아이디-스페이스.hf.space     # HF Spaces 배
 
 이어서 할 일은 코드 안의 `TODO` 주석으로 표시해 두었습니다. (VS Code 검색: `TODO`)
 
-## Vercel 배포 (Week 3~)
+## 운영 배포
 
-1. GitHub 에 push → https://vercel.com 에서 저장소 Import
-2. Root Directory 를 `frontend` 로 지정
-3. Environment Variables 에 `NEXT_PUBLIC_API_BASE` = HF Spaces 백엔드 주소 입력
-4. 백엔드 `.env` 의 `ALLOW_ORIGINS` 에 Vercel 주소 추가
+지금은 공용 서버(태연 PC)에서 `scripts\start-server.bat` 로 운영 빌드를 실행합니다. 자세한 내용은 [docs/server-guide.md](../docs/server-guide.md).
+> Vercel 은 조직 저장소를 무료 플랜으로 바로 연결할 수 없어 보류 중입니다 (회의 안건).

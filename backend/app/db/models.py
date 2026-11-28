@@ -1,9 +1,10 @@
 # DB 테이블 정의 코드
 # 1. analyses: 분석 1건마다 1줄 저장 (점수, 원본 경로, 응답 JSON 전체). 그래서 캐시·재압축 테스트에 재사용
 # 2. feedbacks: 사용자 피드백 저장. 나중에 Active Learning 학습 데이터로 사용
+# 3. train_consent: 업로드한 사람이 학습 데이터 활용에 동의했는지. 학습 데이터 내보낼 때 이 값으로 거름
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -30,6 +31,7 @@ class Analysis(Base):
     sha256: Mapped[str] = mapped_column(String(64), index=True)
     phash: Mapped[str] = mapped_column(String(64), index=True)
     original_path: Mapped[str] = mapped_column(Text)                # 원본 파일 경로 (무손실)
+    train_consent: Mapped[bool] = mapped_column(Boolean, default=False)  # 학습 데이터 활용 동의
 
     authenticity_score: Mapped[int] = mapped_column(Integer)
     grade: Mapped[str] = mapped_column(String(48))
