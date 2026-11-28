@@ -1,0 +1,71 @@
+/* 전체 디자인 토큰(색·폰트·모양) 정의
+   1. designbookmark.com/motion 의 다크 톤을 참고: 검정 배경 + 반투명 흰색 패널
+   2. 여기 값만 바꾸면 전체 화면 색이 같이 바뀜 (Tailwind 에서 bg-panel, text-muted 처럼 사용) */
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #000000;
+  --color-panel: rgb(255 255 255 / 0.05);      /* 사이드바·메인 패널 */
+  --color-box: rgb(255 255 255 / 0.05);        /* 카드 */
+  --color-inset: rgb(255 255 255 / 0.03);      /* 카드 안쪽 버튼 */
+  --color-chip: rgb(116 116 128 / 0.06);       /* 필터 칩 */
+  --color-chip-on: #2c2c2e;                    /* 선택된 칩 */
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-text: #ffffff;
+  --color-muted: rgb(235 235 245 / 0.6);
+  --color-faint: rgb(235 235 245 / 0.3);
+
+  /* 등급 색 (점수 높을수록 초록 = 실사) */
+  --color-safe: #30d158;
+  --color-caution: #ffd60a;
+  --color-warning: #ff9f0a;
+  --color-danger: #ff453a;
+
+  --radius-panel: 20px;
+  --radius-stage: 12px;
+  --radius-card: 8px;
+
+  --font-sans: "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all; /* 한글 단어 중간에서 줄바꿈 방지 */
+}
+
+/* 스크롤바를 얇고 어둡게 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+}
+
+/* 칩·버튼의 은은한 입체감 (참고 사이트 선택 칩 그림자) */
+.lift {
+  box-shadow:
+    0 0 2px rgb(0 0 0 / 0.02),
+    0 6px 30px rgb(0 0 0 / 0.07),
+    inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+/* 분석 중 스캔 라인 애니메이션 */
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+.scan-line {
+  animation: scan 1.6s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+}
+
+/* 점선 격자 배경 (업로드 영역) */
+.dot-grid {
+  background-image: radial-gradient(rgb(255 255 255 / 0.09) 1px, transparent 1px);
+  background-size: 18px 18px;
+}

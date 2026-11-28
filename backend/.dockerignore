@@ -1,0 +1,9 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+*.db
+app/static/results/*
+!app/static/results/.gitkeep
+.git/

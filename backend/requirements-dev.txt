@@ -1,0 +1,4 @@
+# 개발·테스트용 추가 패키지 (서버 실행에는 필요 없음)
+# 설치: pip install -r requirements-dev.txt
+-r requirements.txt
+pytest>=8.0
