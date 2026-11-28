@@ -1,16 +1,25 @@
-# 폴더별 담당자 → PR 을 열면 해당 담당자에게 리뷰 요청이 자동으로 감
-# 1. 팀원 GitHub 아이디가 정해지면 맨 앞 # 을 지우고 @아이디 를 넣으세요
-# 2. 아래쪽 줄이 위쪽 줄보다 우선 적용됨
-# 3. 브랜치 보호 규칙에서 "Require review from Code Owners" 를 켜면 담당자 승인이 필수가 됨
+# 폴더별 담당자 (CODEOWNERS)
+# 1. 아래 폴더의 파일을 고친 PR 은 여기 적힌 사람 중 1명 이상이 승인해야 병합됨
+# 2. 본인 PR 은 본인이 승인할 수 없으므로, 다른 담당자가 승인해야 함
+# 3. 한 파일에 여러 줄이 겹치면 아래쪽 줄만 적용됨
+# 4. 여기에 없는 폴더(frontend, docs, README 등)는 승인 없이 병합 가능
+# 5. 역할이 확정되면 폴더별 담당자를 좁히기 (단, 폴더마다 2명 이상 유지)
+#
+# 팀원: hosun0720(김호선) · xodus217(김태연) · hsb020524 · kdhgc
 
-# 전체 기본 담당 (팀장)
-# *                       @팀장아이디
+# AI 분석 엔진 — 점수에 직접 영향
+/backend/app/pipeline/      @hosun0720 @xodus217 @hsb020524 @kdhgc
 
-# 백엔드
-# /backend/               @태연아이디
+# 보안·설정·DB — 접근 키, 업로드 검사, 저장 정책
+/backend/app/core/          @xodus217 @hosun0720 @hsb020524 @kdhgc
+/backend/app/db/            @xodus217 @hosun0720 @hsb020524 @kdhgc
 
-# AI·포렌식 분석 엔진
-# /backend/app/pipeline/  @AI팀아이디
+# API 계약 — 프론트와 약속한 응답 형식 (바뀌면 프론트가 깨짐)
+/backend/app/schemas/       @xodus217 @hosun0720 @hsb020524 @kdhgc
 
-# 프론트엔드
-# /frontend/              @프론트팀아이디
+# 학습·평가 코드 (ml/ 폴더를 만들면 자동 적용)
+/ml/                        @hosun0720 @xodus217 @hsb020524 @kdhgc
+
+# 저장소 규칙·자동 검사·서버 실행 스크립트
+/.github/                   @xodus217 @hosun0720
+/scripts/                   @xodus217 @hosun0720
