@@ -3,9 +3,10 @@
 // 2. 분석 흐름: 파일 선택·URL 입력 → API 호출 → result 저장 → 결과 카드 표시 + 기록에 추가
 // 3. 결과 카드는 상단 칩(전체/점수/근거/검증)으로 걸러볼 수 있음
 // 4. 접근 키 오류(401)가 나면 오류 알림 아래에 키 입력칸을 바로 띄움 (모바일에서도 입력 가능)
+// 5. 업로드 카드 아래 '학습 데이터 활용 동의' 체크박스 → 파일·URL 분석 요청에 같이 보냄 (기본: 동의 안 함)
 "use client";
 
-import { RotateCcw, TriangleAlert, X } from "lucide-react";
+import { Check, RotateCcw, TriangleAlert, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState, useSyncExternalStore } from "react";
 import { AuthError, analyzeImage, analyzeUrl, assetUrl } from "@/lib/api";
@@ -55,6 +56,7 @@ export function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needKey, setNeedKey] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const items = useSyncExternalStore(history.subscribe, history.getSnapshot, history.getServerSnapshot);
 
@@ -83,12 +85,12 @@ export function Home() {
   const onFile = (file: File) => {
     if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(file));
-    run(() => analyzeImage(file), file.name);
+    run(() => analyzeImage(file, consent), file.name);
   };
 
   const onUrl = (url: string) => {
     setPreview(null);
-    run(() => analyzeUrl(url), url.replace(/^https?:\/\//, ""));
+    run(() => analyzeUrl(url, consent), url.replace(/^https?:\/\//, ""));
   };
 
   const reset = () => {
@@ -191,9 +193,10 @@ export function Home() {
                         />
                         <CardFooter
                           title="이미지 업로드"
-                          sub="원본 화질 그대로 분석합니다 · 업로드한 이미지는 분석에만 사용됩니다"
+                          sub="원본 화질 그대로 분석합니다 · 아래에 동의한 경우에만 학습 데이터로 보관합니다"
                           right={<NewBadge />}
                         />
+                        <ConsentCheck checked={consent} onChange={setConsent} />
                       </Card>
                     )}
                     {result && show("score") && <ScoreCard key={`score-${result.analysis_id}`} result={result} source={source} />}
@@ -212,5 +215,30 @@ export function Home() {
 
       <UrlBar loading={loading} onSubmit={onUrl} />
     </div>
+  );
+}
+
+// 학습 데이터 활용 동의 체크박스 (선택 사항)
+// 1. 체크하면 이번 업로드·URL 분석 이미지를 AI 학습 데이터로 보관해도 된다는 뜻
+// 2. 체크하지 않아도 분석은 똑같이 됨
+// TODO: 회의에서 동의 문구·보관 기간이 정해지면 문구 교체
+function ConsentCheck({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="mx-1 mb-1 flex cursor-pointer items-start gap-2.5 rounded-card bg-inset px-3 py-2.5 text-[12px] text-muted transition-colors hover:text-text">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+      <span
+        aria-hidden
+        className={`mt-px flex size-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-white/40 ${
+          checked ? "border-white bg-white text-black" : "border-white/25"
+        }`}
+      >
+        {checked && <Check size={11} strokeWidth={3} />}
+      </span>
+      <span>
+        <span className="font-medium text-text">(선택) 이 이미지를 AI 학습 데이터로 활용하는 데 동의합니다.</span>
+        <br />
+        분석 정확도 개선에만 쓰이며, 얼굴 등 개인정보가 담긴 사진은 체크하지 마세요.
+      </span>
+    </label>
   );
 }

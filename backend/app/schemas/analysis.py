@@ -86,6 +86,7 @@ class FeedbackResponse(BaseModel):
 # ── 요청 ──
 class AnalyzeUrlRequest(BaseModel):
     url: HttpUrl
+    train_consent: bool = False  # 학습 데이터 활용 동의 (선택)
 
 
 class RecompressTestRequest(BaseModel):

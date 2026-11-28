@@ -7,7 +7,7 @@ import time
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 
@@ -41,6 +41,7 @@ def _analyze_sync(
     source_url: str | None = None,
     parent_id: str | None = None,
     use_cache: bool = True,
+    train_consent: bool = False,
 ) -> AnalysisResponse:
     started = time.perf_counter()
     pre = preprocess_bytes(raw, source_url=source_url)
@@ -57,6 +58,10 @@ def _analyze_sync(
                 .limit(1)
             ).first()
             if hit is not None:
+                # 이번에 동의했으면 예전 기록에도 동의 표시 (동의 철회는 여기서 하지 않음)
+                if train_consent and not hit.train_consent:
+                    hit.train_consent = True
+                    db.commit()
                 cached = AnalysisResponse.model_validate(hit.result_json)
                 return cached.model_copy(update={
                     "cached": True,
@@ -80,6 +85,7 @@ def _analyze_sync(
             height=pre.height,
             sha256=pre.sha256,
             phash=pre.phash,
+            train_consent=train_consent,
             original_path=(RESULTS_DIR / f"{analysis_id}_orig{pre.ext}").relative_to(BASE_DIR).as_posix(),
             authenticity_score=result.authenticity_score,
             grade=result.grade.value,
@@ -110,21 +116,29 @@ def _models(request: Request) -> LoadedModels:
 
 # POST /api/v1/analyze/image — 이미지 파일 분석
 @router.post("/analyze/image", response_model=AnalysisResponse, summary="이미지 파일 분석")
-async def analyze_image(request: Request, file: UploadFile = File(..., description="JPEG/PNG/WEBP, 최대 20MB")):
+async def analyze_image(
+    request: Request,
+    file: UploadFile = File(..., description="JPEG/PNG/WEBP, 최대 20MB"),
+    train_consent: bool = Form(False, description="학습 데이터 활용 동의 (선택)"),
+):
     settings = get_settings()
     raw = await read_upload_limited(file, settings.max_upload_bytes)
-    return await _run(_analyze_sync, raw, settings=settings, models=_models(request), source_type="upload")
+    return await _run(
+        _analyze_sync, raw, settings=settings, models=_models(request), source_type="upload", train_consent=train_consent
+    )
 
 
 # POST /api/v1/analyze/url — URL 에서 이미지 추출 후 분석
-def _analyze_url_sync(url: str, settings: Settings, models: LoadedModels) -> AnalysisResponse:
+def _analyze_url_sync(url: str, settings: Settings, models: LoadedModels, train_consent: bool) -> AnalysisResponse:
     raw, image_url = fetch_image_from_url(url, settings.max_upload_bytes, settings.URL_FETCH_TIMEOUT_SEC)
-    return _analyze_sync(raw, settings=settings, models=models, source_type="url", source_url=image_url)
+    return _analyze_sync(
+        raw, settings=settings, models=models, source_type="url", source_url=image_url, train_consent=train_consent
+    )
 
 
 @router.post("/analyze/url", response_model=AnalysisResponse, summary="URL 이미지 추출 & 분석")
 async def analyze_url(request: Request, body: AnalyzeUrlRequest):
-    return await _run(_analyze_url_sync, str(body.url), get_settings(), _models(request))
+    return await _run(_analyze_url_sync, str(body.url), get_settings(), _models(request), body.train_consent)
 
 
 # POST /api/v1/analyze/recompress-test — SNS 재압축 스트레스 테스트
@@ -137,6 +151,7 @@ def _recompress_sync(analysis_id: str, settings: Settings, models: LoadedModels)
             raise HTTPException(status.HTTP_404_NOT_FOUND, "해당 analysis_id 의 분석 기록을 찾을 수 없습니다.")
         original = AnalysisResponse.model_validate(row.result_json).model_copy(update={"cached": False})
         orig_path = Path(row.original_path)
+        parent_consent = row.train_consent
 
     if not orig_path.is_absolute():
         orig_path = BASE_DIR / orig_path
@@ -146,7 +161,7 @@ def _recompress_sync(analysis_id: str, settings: Settings, models: LoadedModels)
     recompressed_bytes = simulate_sns_recompression(orig_path.read_bytes(), scale=0.5, quality=75)
     recompressed = _analyze_sync(
         recompressed_bytes, settings=settings, models=models,
-        source_type="recompress", parent_id=analysis_id, use_cache=False,
+        source_type="recompress", parent_id=analysis_id, use_cache=False, train_consent=parent_consent,
     )
     return RecompressTestResponse(
         analysis_id=analysis_id,

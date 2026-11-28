@@ -1,14 +1,15 @@
 // 백엔드 서버와 통신하는 코드
-// 1. 서버 주소는 .env.local 의 NEXT_PUBLIC_API_BASE 로 정함 (없으면 http://localhost:8000)
-//    그래서 터널 주소·HF Spaces 주소로 바뀌어도 코드 수정 없이 .env.local 한 줄만 바꾸면 됨
-// 2. 서버가 보낸 한국어 오류 메시지(detail)를 그대로 Error 로 던짐. 화면은 그 메시지를 보여주기만 하면 됨
-// 3. 저장된 접근 키를 모든 요청에 X-Access-Key 헤더로 붙임. 401 이면 AuthError 로 구분해서 던짐
+// 1. 기본은 같은 주소로 요청 (예: /api/v1/...). Next 서버가 next.config.ts 의 프록시로 백엔드에 전달함
+//    그래서 공용 서버든 개인 개발 서버든 프론트 코드는 그대로 두면 됨
+// 2. 특별히 다른 주소의 백엔드를 브라우저가 직접 부르게 하려면 .env.local 에 NEXT_PUBLIC_API_BASE=주소 (보통은 쓰지 않음)
+// 3. 서버가 보낸 한국어 오류 메시지(detail)를 그대로 Error 로 던짐. 화면은 그 메시지를 보여주기만 하면 됨
+// 4. 저장된 접근 키를 모든 요청에 X-Access-Key 헤더로 붙임. 401 이면 AuthError 로 구분해서 던짐
 import { accessKey } from "./accessKey";
 import type { AnalysisResult, Health, RecompressResult, UserLabel } from "./types";
 
-export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000").replace(/\/$/, "");
+export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
 
-// 백엔드가 주는 /static/... 상대 경로를 전체 주소로 바꿈
+// 백엔드가 주는 /static/... 상대 경로를 실제 요청 주소로 바꿈 (기본은 같은 주소라 그대로 사용)
 export function assetUrl(path: string): string {
   return path.startsWith("http") ? path : `${API_BASE}${path}`;
 }
@@ -46,14 +47,16 @@ export function getHealth() {
   return request<Health>("/health");
 }
 
-export function analyzeImage(file: File) {
+// trainConsent: 학습 데이터 활용 동의 여부 (업로드 화면 체크박스)
+export function analyzeImage(file: File, trainConsent = false) {
   const form = new FormData();
   form.append("file", file);
+  form.append("train_consent", String(trainConsent));
   return request<AnalysisResult>("/api/v1/analyze/image", { method: "POST", body: form });
 }
 
-export function analyzeUrl(url: string) {
-  return request<AnalysisResult>("/api/v1/analyze/url", json({ url }));
+export function analyzeUrl(url: string, trainConsent = false) {
+  return request<AnalysisResult>("/api/v1/analyze/url", json({ url, train_consent: trainConsent }));
 }
 
 export function recompressTest(analysisId: string) {

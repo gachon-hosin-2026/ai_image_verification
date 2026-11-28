@@ -95,8 +95,8 @@ export function Sidebar({ view, onChange, historyCount }: { view: View; onChange
             <span className="ml-auto rounded-full bg-caution/15 px-1.5 font-mono text-[10px] text-caution">MOCK</span>
           )}
         </div>
-        <p className="mt-1.5 truncate font-mono text-[10px] text-faint" title={API_BASE}>
-          {API_BASE.replace(/^https?:\/\//, "")}
+        <p className="mt-1.5 truncate font-mono text-[10px] text-faint" title={API_BASE || "같은 주소 (프록시)"}>
+          {API_BASE ? API_BASE.replace(/^https?:\/\//, "") : "같은 주소 (프록시)"}
         </p>
       </div>
     </aside>

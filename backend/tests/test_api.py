@@ -101,3 +101,36 @@ def test_grade_boundaries():
     assert score_to_grade(30) == Grade.WARNING_AI_SUSPECTED
     assert score_to_grade(29) == Grade.DANGER_HIGHLY_LIKELY_AI
     assert score_to_grade(0) == Grade.DANGER_HIGHLY_LIKELY_AI
+
+
+# ── 학습 데이터 동의 ──
+def test_train_consent_saved(client, auth, png_bytes):
+    from app.db.database import SessionLocal
+    from app.db.models import Analysis
+
+    yes = client.post(
+        "/api/v1/analyze/image", headers=auth,
+        files={"file": ("y.png", png_bytes, "image/png")}, data={"train_consent": "true"},
+    ).json()["analysis_id"]
+    no = client.post(
+        "/api/v1/analyze/image", headers=auth, files={"file": ("n.png", png_bytes, "image/png")}
+    ).json()["analysis_id"]
+    with SessionLocal() as db:
+        assert db.get(Analysis, yes).train_consent is True
+        assert db.get(Analysis, no).train_consent is False   # 기본값은 동의 안 함
+
+
+def test_old_db_gets_new_column(tmp_path):
+    # 예전 버전 DB(train_consent 컬럼 없음)에 서버를 켜면 컬럼이 자동으로 추가돼야 함
+    from sqlalchemy import create_engine, inspect, text
+
+    from app.db.database import _add_missing_columns
+
+    eng = create_engine(f"sqlite:///{tmp_path}/old.db")
+    with eng.begin() as c:
+        c.execute(text("CREATE TABLE analyses (id VARCHAR(36) PRIMARY KEY, phash VARCHAR(64))"))
+        c.execute(text("INSERT INTO analyses (id, phash) VALUES ('a', 'b')"))
+    _add_missing_columns(eng)
+    assert "train_consent" in {col["name"] for col in inspect(eng).get_columns("analyses")}
+    with eng.connect() as c:
+        assert c.execute(text("SELECT train_consent FROM analyses")).scalar() == 0  # 기존 기록은 '동의 안 함'
