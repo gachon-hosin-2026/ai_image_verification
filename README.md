@@ -125,3 +125,5 @@ git branch -d feat/backend-access-key
 - **큰 파일 금지**: 모델 가중치(`.onnx`, `.joblib`), 학습 이미지, DB 파일은 올리지 않습니다. (`.gitignore` 로 막혀 있음)
 - **API 형식 변경 시**: `backend/app/schemas/analysis.py` 를 바꾸면 `frontend/src/lib/types.ts` 도 **같은 PR 에서** 함께 고치세요.
 - **주석 스타일**: 파일·함수 위에 `무엇을 하는 코드` 한 줄 + `1. 어떻게 진행 → 어디에 영향` 번호 목록.
+
+<!-- 자동 병합 테스트 -->
