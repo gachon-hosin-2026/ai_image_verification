@@ -1,0 +1,72 @@
+# 자동 검사 (GitHub Actions)
+# 1. PR 을 올리거나 main 에 병합될 때마다 GitHub 서버가 자동으로 실행함
+# 2. 백엔드: 패키지 설치 → pytest (API 계약·보안 기능 테스트)
+# 3. 프론트: 패키지 설치 → lint(코드 규칙 검사) → build(빌드 되는지)
+# 4. 바뀐 폴더만 검사함. 그래서 프론트만 고친 PR 은 백엔드 검사를 건너뜀
+# 5. PR 화면에 초록 체크(통과) / 빨간 X(실패)로 표시됨 → 리뷰어가 먼저 확인
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# 같은 PR 에 새 커밋이 올라오면 이전 검사는 취소 (시간 절약)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 어느 폴더가 바뀌었는지 확인
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # Dockerfile(HF Spaces)과 같은 버전
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # LTS (20 은 2026-04 지원 종료)
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build

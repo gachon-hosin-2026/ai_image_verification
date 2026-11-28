@@ -14,8 +14,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# [팀 수정] 원래 lib/, lib64/ 였으나 frontend/src/lib/ 까지 무시해서 루트 폴더에만 적용되도록 / 를 붙임
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -221,3 +222,28 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── 팀 프로젝트 추가 규칙 ─────────────────────────────────
+# 비밀 정보, 큰 파일, 실행할 때마다 생기는 파일은 Git 에 올리지 않음
+# 1. .env 류 (접근 키 등) — 예시 파일(.env.example)만 올림
+# 2. 모델 가중치·DB·분석 결과 이미지 — 용량이 크고 사람마다 다름
+# 3. 각 폴더(backend/, frontend/)의 .gitignore 에도 세부 규칙이 있음
+.env.*
+!.env.example
+!.env.local.example
+*.db
+*.onnx
+*.joblib
+backend/app/static/results/*
+!backend/app/static/results/.gitkeep
+backend/models/*
+!backend/models/.gitkeep
+node_modules/
+.next/
+.DS_Store
+Thumbs.db
+
+# 압축 파일(백업 zip 등)과 개인 편집기 설정은 올리지 않음
+*.zip
+.vscode/
+.idea/
